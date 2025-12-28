@@ -1,0 +1,31 @@
+# Environment configuration
+.env
+
+# Don't ignore example files
+!.env.example
+
+# Docker volumes and data
+*.log
+/data
+/config
+
+# WordPress uploads and cache
+/wordpress/wp-content/uploads/
+/wordpress/wp-content/cache/
+
+# OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Backup files
+*.sql
+*.tar.gz
+*.zip
+backups/
+
+# Temporary files
+*.tmp
+*.swp
+*~

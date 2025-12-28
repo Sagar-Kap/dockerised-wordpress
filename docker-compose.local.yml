@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: wordpress-mysql-local
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data_local:/var/lib/mysql
+    networks:
+      - wordpress-network
+    command: "--default-authentication-plugin=mysql_native_password"
+
+  # WordPress Application
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress-app-local
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    environment:
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+      # Enable WordPress debug mode for local development
+      WORDPRESS_DEBUG: 1
+    volumes:
+      - wordpress_data_local:/var/www/html
+    networks:
+      - wordpress-network
+
+  # Caddy Reverse Proxy (Local Development)
+  caddy:
+    image: caddy:latest
+    container_name: wordpress-caddy-local
+    restart: unless-stopped
+    depends_on:
+      - wordpress
+    ports:
+      - "8080:8080" # HTTP only for local dev
+    volumes:
+      # Use local development Caddyfile
+      - ./Caddyfile.local:/etc/caddy/Caddyfile
+      - caddy_data_local:/data
+      - caddy_config_local:/config
+    networks:
+      - wordpress-network
+
+volumes:
+  mysql_data_local:
+    driver: local
+  wordpress_data_local:
+    driver: local
+  caddy_data_local:
+    driver: local
+  caddy_config_local:
+    driver: local
+
+networks:
+  wordpress-network:
+    driver: bridge

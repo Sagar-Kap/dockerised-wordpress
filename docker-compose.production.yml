@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: wordpress-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - wordpress-network
+    command: "--default-authentication-plugin=mysql_native_password"
+
+  # WordPress Application
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress-app
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    environment:
+      WORDPRESS_DB_HOST: ${WORDPRESS_DB_HOST}
+      WORDPRESS_DB_USER: ${WORDPRESS_DB_USER}
+      WORDPRESS_DB_PASSWORD: ${WORDPRESS_DB_PASSWORD}
+      WORDPRESS_DB_NAME: ${WORDPRESS_DB_NAME}
+    volumes:
+      - wordpress_data:/var/www/html
+    networks:
+      - wordpress-network
+
+  # Caddy Reverse Proxy with Automatic HTTPS
+  caddy:
+    image: caddy:latest
+    container_name: wordpress-caddy
+    restart: unless-stopped
+    depends_on:
+      - wordpress
+    ports:
+      - "80:80" # HTTP
+      - "443:443" # HTTPS
+    volumes:
+      # Use production Caddyfile
+      - ./Caddyfile.production:/etc/caddy/Caddyfile
+      # Persistent storage for SSL certificates and configuration
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - wordpress-network
+
+volumes:
+  mysql_data:
+    driver: local
+  wordpress_data:
+    driver: local
+  caddy_data:
+    driver: local
+  caddy_config:
+    driver: local
+
+networks:
+  wordpress-network:
+    driver: bridge
